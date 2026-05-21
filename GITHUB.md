@@ -15,7 +15,7 @@
 在 PowerShell 中执行（把 `你的用户名` 和 `仓库名` 换成自己的）：
 
 ```powershell
-cd c:\Yebby\Study\FrontStudy\Character
+cd <你的 Character 项目目录>
 
 git remote add origin https://github.com/你的用户名/仓库名.git
 git branch -M main

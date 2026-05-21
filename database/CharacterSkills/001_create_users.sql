@@ -3,7 +3,7 @@
  * 数据库：CharacterSkills
  * 说明：创建登录/注册用的用户表（与 Vue 登录页、后续 .NET Core API 对齐）
  *
- * 在 DBeaver 中：连接到 YEBBYHUANG-PC\YEBBYHUANG → 打开 SQL 编辑器 → 执行本脚本
+ * 在 DBeaver 中：连接你的 SQL Server 实例 → 打开 SQL 编辑器 → 执行本脚本
  */
 
 USE CharacterSkills;

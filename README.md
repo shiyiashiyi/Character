@@ -12,7 +12,7 @@
 
 ## 前置条件
 
-1. SQL Server 实例已运行（示例：`YEBBYHUANG-PC\YEBBYHUANG`）
+1. SQL Server 实例已运行（示例：`localhost\SQLEXPRESS` 或你的「服务器\实例名」）
 2. 已创建数据库 **CharacterSkills**，并执行 `database/CharacterSkills/001_create_users.sql`
 3. 推荐 SQL 登录：执行 `database/CharacterSkills/007_create_sql_login.sql`
 

@@ -6,6 +6,6 @@
     }
   },
   "ConnectionStrings": {
-    "CharacterSkills": "Server=YEBBYHUANG-PC\\YEBBYHUANG;Database=CharacterSkills;User Id=frontstudy_app;Password=你的密码;TrustServerCertificate=True;Encrypt=False;"
+    "CharacterSkills": "Server=你的服务器\\实例名;Database=CharacterSkills;User Id=你的SQL登录名;Password=你的密码;TrustServerCertificate=True;Encrypt=False;"
   }
 }

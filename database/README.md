@@ -5,7 +5,7 @@
 ## 数据库
 
 - 名称：**CharacterSkills**
-- 实例示例：`YEBBYHUANG-PC\YEBBYHUANG`（Windows 身份验证）
+- 实例示例：`localhost\SQLEXPRESS`（按本机 SSMS 连接窗口填写）
 
 ## 在 DBeaver 中执行顺序
 
@@ -20,9 +20,9 @@
 
 ## API 报错「无法打开数据库 CharacterSkills / 用户登录失败」
 
-`dotnet run` 使用**当前 Windows 用户**（如 `MicrosoftAccount\xxx@qq.com`），与 SSMS 里用的账户可能不同。
+`dotnet run` 使用**当前 Windows 用户**，与 SSMS 里用的账户可能不同。
 
-1. 在 SSMS 用管理员身份连接 `YEBBYHUANG-PC\YEBBYHUANG`
+1. 在 SSMS 用管理员身份连接你的 SQL Server 实例
 2. 执行 `004_grant_api_windows_user.sql`（若报错用户名不同，把脚本里的登录名改成报错中的名称）
 3. 重启 API：`dotnet run`
 
@@ -39,27 +39,27 @@
 | UpdatedAtUtc | DATETIME2 | 更新时间 |
 | LastLoginAtUtc | DATETIME2 | 最后登录时间 |
 
-## 与前端演示账号
+## 演示账号
 
-| 邮箱 | 密码（明文仅用于开发） |
-|------|------------------------|
-| demo@front.study | demo12345 |
+请在前端 **注册** 页面自行创建测试账号，不要使用真实邮箱或常用密码。
 
-密码哈希需在 **.NET Core API** 中用 `PasswordHasher` 或 Identity 生成后写入，不要手写明文进库。
+密码在库中仅存哈希，由 **.NET Core API** 的 `PasswordHasher` 写入，禁止明文入库。
 
 ## .NET 连接字符串示例
 
-**SQL Server 身份验证（推荐，避免 Windows 权限问题）：**
+复制 `Character/api/FrontStudy.Api/appsettings.Development.json.example` 为 `appsettings.Development.json`，按本机环境填写。
 
-1. 执行 `007_create_sql_login.sql`
-2. 在 `Character/api/FrontStudy.Api/appsettings.Development.json` 使用：
+**SQL Server 身份验证（推荐）：**
+
+1. 执行 `007_create_sql_login.sql`（脚本内密码请自行修改）
+2. 示例格式：
 
 ```json
-"CharacterSkills": "Server=YEBBYHUANG-PC\\YEBBYHUANG;Database=CharacterSkills;User Id=frontstudy_app;Password=FrontStudy@2026;TrustServerCertificate=True;Encrypt=False;"
+"CharacterSkills": "Server=你的服务器\\实例名;Database=CharacterSkills;User Id=你的SQL登录名;Password=你的密码;TrustServerCertificate=True;Encrypt=False;"
 ```
 
 **Windows 身份验证（需为运行 dotnet 的 Windows 用户授权，见 006）：**
 
 ```json
-"CharacterSkills": "Server=YEBBYHUANG-PC\\YEBBYHUANG;Database=CharacterSkills;Trusted_Connection=True;TrustServerCertificate=True;"
+"CharacterSkills": "Server=你的服务器\\实例名;Database=CharacterSkills;Trusted_Connection=True;TrustServerCertificate=True;Encrypt=False;"
 ```

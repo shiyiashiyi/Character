@@ -1,56 +1,48 @@
 /**
  * 004_grant_api_windows_user.sql
- * 修复：dotnet run 使用的 Windows 账户无法打开 CharacterSkills
+ * 为【运行 dotnet run 的 Windows 账户】授予 CharacterSkills 权限
  *
- * 在 SSMS 或 DBeaver 中用【有管理员权限的账户】连接实例后执行
- * （例如你平时能打开 SSMS 的那个 Windows 登录）
- *
- * 若 API 报错里的用户名与下面不一致，把脚本中的登录名改成报错中的完整名称
+ * 执行前：把 @WindowsLogin 改成你的登录名（whoami 或 /api/health/db 的 authHint）
  */
 
--- 1. 确保数据库存在
 IF NOT EXISTS (SELECT 1 FROM sys.databases WHERE name = N'CharacterSkills')
-BEGIN
     CREATE DATABASE CharacterSkills;
-    PRINT N'已创建数据库 CharacterSkills';
+GO
+
+USE master;
+GO
+
+DECLARE @WindowsLogin sysname = N'你的计算机名\你的用户名';
+DECLARE @sql nvarchar(max);
+
+IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = @WindowsLogin)
+BEGIN
+    SET @sql = N'CREATE LOGIN ' + QUOTENAME(@WindowsLogin) + N' FROM WINDOWS';
+    EXEC sp_executesql @sql;
 END
-ELSE
-    PRINT N'数据库 CharacterSkills 已存在';
 GO
 
 USE CharacterSkills;
 GO
 
--- 2. 为运行 API 的 Windows 账户创建服务器登录（若尚未存在）
-IF NOT EXISTS (
-    SELECT 1 FROM sys.server_principals
-    WHERE name = N'MicrosoftAccount\773749724@qq.com'
-)
+DECLARE @WindowsLogin sysname = N'你的计算机名\你的用户名';
+DECLARE @User sysname;
+DECLARE @sql nvarchar(max);
+
+SELECT @User = name FROM sys.database_principals WHERE sid = SUSER_SID(@WindowsLogin);
+
+IF @User IS NULL
 BEGIN
-    CREATE LOGIN [MicrosoftAccount\773749724@qq.com] FROM WINDOWS;
-    PRINT N'已创建服务器登录 MicrosoftAccount\773749724@qq.com';
+    SET @sql = N'CREATE USER ' + QUOTENAME(@WindowsLogin) + N' FOR LOGIN ' + QUOTENAME(@WindowsLogin);
+    EXEC sp_executesql @sql;
+    SET @User = @WindowsLogin;
 END
-ELSE
-    PRINT N'服务器登录已存在';
-GO
 
-USE CharacterSkills;
-GO
-
--- 3. 映射数据库用户并授权
-IF NOT EXISTS (
-    SELECT 1 FROM sys.database_principals
-    WHERE name = N'MicrosoftAccount\773749724@qq.com'
-)
+IF ISNULL(IS_ROLEMEMBER(N'db_owner', @User), 0) <> 1
 BEGIN
-    CREATE USER [MicrosoftAccount\773749724@qq.com]
-        FOR LOGIN [MicrosoftAccount\773749724@qq.com];
-    PRINT N'已创建数据库用户';
+    SET @sql = N'ALTER ROLE db_owner ADD MEMBER ' + QUOTENAME(@User);
+    EXEC sp_executesql @sql;
 END
-GO
 
-ALTER ROLE db_owner ADD MEMBER [MicrosoftAccount\773749724@qq.com];
-GO
-
-PRINT N'已为 API 运行账户授予 CharacterSkills 的 db_owner 权限。';
+PRINT N'Windows 授权完成，用户: ' + @User;
 GO

@@ -13,7 +13,7 @@ GO
 
 -- 按需修改登录名与密码（本地开发用，勿用于生产）
 DECLARE @LoginName sysname = N'frontstudy_app';
-DECLARE @Password  nvarchar(128) = N'FrontStudy@2026';
+DECLARE @Password  nvarchar(128) = N'请改为你的强密码';
 
 IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = @LoginName)
 BEGIN
