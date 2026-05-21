@@ -1,0 +1,11 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "ConnectionStrings": {
+    "CharacterSkills": "Server=YEBBYHUANG-PC\\YEBBYHUANG;Database=CharacterSkills;User Id=frontstudy_app;Password=你的密码;TrustServerCertificate=True;Encrypt=False;"
+  }
+}

@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Logs & OS
+*.log
+.DS_Store
+Thumbs.db
+
+# Secrets & local config（勿提交密码）
+.env
+.env.*
+!.env.example
+appsettings.Development.json
+**/appsettings.Development.json
+
+# Vite
+login/node_modules/.vite/

@@ -1,0 +1,6 @@
+@FrontStudy.Api_HostAddress = http://localhost:5050
+
+GET {{FrontStudy.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
