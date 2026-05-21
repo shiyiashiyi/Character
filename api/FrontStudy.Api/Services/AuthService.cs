@@ -9,13 +9,20 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FrontStudy.Api.Services;
 
-public class AuthService(AppDbContext db)
+public class AuthService(AppDbContext db, EmailVerificationService emailVerification)
 {
     private readonly PasswordHasher<User> _hasher = new();
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
     {
         var email = request.Email.Trim().ToLowerInvariant();
+
+        var codeResult = await emailVerification.ValidateCodeAsync(
+            email,
+            request.VerificationCode,
+            ct);
+        if (!codeResult.Success)
+            return new AuthResponse(false, codeResult.Message, null);
 
         if (await db.Users.AnyAsync(u => u.Email == email, ct))
             return new AuthResponse(false, "该邮箱已被注册", null);
@@ -28,6 +35,7 @@ public class AuthService(AppDbContext db)
                 ? email.Split('@')[0]
                 : request.DisplayName.Trim(),
             IsActive = true,
+            EmailConfirmed = true,
             CreatedAtUtc = DateTime.UtcNow,
         };
 

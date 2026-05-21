@@ -32,12 +32,18 @@ export function useAuthForm() {
   const password = ref('')
   const confirmPassword = ref('')
   const displayName = ref('')
+  const verificationCode = ref('')
+  const codeSent = ref(false)
+  const sendCountdown = ref(0)
+  const sendCodeBusy = ref(false)
+  const codeHint = ref('')
   const remember = ref(false)
   const showPassword = ref(false)
   const slideDone = ref(false)
   const busy = ref(false)
   const successVisible = ref(false)
   const successMessage = ref('')
+  const authUser = ref(null)
   const authError = ref('')
 
   const emailFocused = ref(false)
@@ -45,6 +51,9 @@ export function useAuthForm() {
   const emailTouched = ref(false)
   const pwdTouched = ref(false)
   const confirmTouched = ref(false)
+  const codeTouched = ref(false)
+
+  let countdownTimer = null
 
   const isLogin = computed(() => mode.value === 'login')
   const isRegister = computed(() => mode.value === 'register')
@@ -81,6 +90,22 @@ export function useAuthForm() {
     return confirmValid.value ? '' : '两次输入的密码不一致'
   })
 
+  const codeValid = computed(() => /^\d{6}$/.test(verificationCode.value.trim()))
+
+  const codeError = computed(() => {
+    if (!codeTouched.value || !verificationCode.value) return ''
+    return codeValid.value ? '' : '请输入 6 位数字验证码'
+  })
+
+  const canSendCode = computed(
+    () =>
+      isRegister.value &&
+      emailValid.value &&
+      sendCountdown.value === 0 &&
+      !sendCodeBusy.value &&
+      !busy.value
+  )
+
   const fieldsReady = computed(() => emailValid.value && pwdValid.value)
   const canSubmitLogin = computed(
     () => isLogin.value && fieldsReady.value && slideDone.value && !busy.value
@@ -91,8 +116,27 @@ export function useAuthForm() {
       fieldsReady.value &&
       confirmValid.value &&
       confirmPassword.value.length > 0 &&
+      codeSent.value &&
+      codeValid.value &&
       !busy.value
   )
+
+  function clearCountdown() {
+    if (countdownTimer) {
+      clearInterval(countdownTimer)
+      countdownTimer = null
+    }
+    sendCountdown.value = 0
+  }
+
+  function startCountdown(seconds = 60) {
+    clearCountdown()
+    sendCountdown.value = seconds
+    countdownTimer = setInterval(() => {
+      if (sendCountdown.value <= 1) clearCountdown()
+      else sendCountdown.value -= 1
+    }, 1000)
+  }
 
   watch(mode, () => {
     authError.value = ''
@@ -100,10 +144,15 @@ export function useAuthForm() {
     emailTouched.value = false
     pwdTouched.value = false
     confirmTouched.value = false
+    codeTouched.value = false
+    verificationCode.value = ''
+    codeSent.value = false
+    codeHint.value = ''
+    clearCountdown()
     setStatus(
       mode.value === 'login'
         ? '登录 — 请先填写邮箱与密码，并完成滑动确认'
-        : '注册 — 填写邮箱、昵称与密码',
+        : '注册 — 填写邮箱并发送验证码，再设置密码',
       '',
       0
     )
@@ -154,6 +203,41 @@ export function useAuthForm() {
     confirmTouched.value = true
   }
 
+  function onCodeBlur() {
+    codeTouched.value = true
+  }
+
+  function onCodeInput() {
+    authError.value = ''
+    verificationCode.value = verificationCode.value.replace(/\D/g, '').slice(0, 6)
+  }
+
+  async function sendCode() {
+    if (!canSendCode.value) return
+
+    emailTouched.value = true
+    sendCodeBusy.value = true
+    authError.value = ''
+    codeHint.value = ''
+    setStatus('正在发送验证码…', 'busy', 25)
+
+    try {
+      const data = await authApi.sendVerificationCode(email.value.trim())
+      codeSent.value = true
+      startCountdown(60)
+      codeHint.value =
+        data.message ||
+        '请查收 characteryebby@163.com 发出的邮件（可能在垃圾箱）'
+      setStatus(codeHint.value, 'ok', 45)
+    } catch (e) {
+      if (e.status === 429) startCountdown(60)
+      authError.value = e.message || '发送验证码失败'
+      setStatus(authError.value, 'error', 0)
+    } finally {
+      sendCodeBusy.value = false
+    }
+  }
+
   function applySuffix(suffix) {
     const base = email.value.split('@')[0] || email.value
     email.value = base + suffix
@@ -174,6 +258,7 @@ export function useAuthForm() {
   }
 
   function showSuccess(user, actionLabel) {
+    authUser.value = user
     const name = user.displayName || user.email.split('@')[0]
     successMessage.value = `${actionLabel}成功 — 你好，${name}`
     successVisible.value = true
@@ -220,9 +305,15 @@ export function useAuthForm() {
     emailTouched.value = true
     pwdTouched.value = true
     confirmTouched.value = true
+    codeTouched.value = true
 
-    if (!emailValid.value || !pwdValid.value || !confirmValid.value) {
+    if (!emailValid.value || !pwdValid.value || !confirmValid.value || !codeValid.value) {
       setStatus('请检查表单填写', 'warn', 20)
+      return
+    }
+
+    if (!codeSent.value) {
+      setStatus('请先发送邮箱验证码', 'warn', 20)
       return
     }
 
@@ -235,11 +326,15 @@ export function useAuthForm() {
         email: email.value.trim(),
         password: password.value,
         displayName: displayName.value.trim() || null,
+        verificationCode: verificationCode.value.trim(),
       })
       showSuccess(data.user, '注册')
       mode.value = 'login'
       password.value = ''
       confirmPassword.value = ''
+      verificationCode.value = ''
+      codeSent.value = false
+      clearCountdown()
     } catch (e) {
       authError.value = e.message || '注册失败'
       setStatus(authError.value, e.status === 409 ? 'warn' : 'error', 0)
@@ -261,12 +356,21 @@ export function useAuthForm() {
     password,
     confirmPassword,
     displayName,
+    verificationCode,
+    codeSent,
+    sendCountdown,
+    sendCodeBusy,
+    codeHint,
+    codeValid,
+    codeError,
+    canSendCode,
     remember,
     showPassword,
     slideDone,
     busy,
     successVisible,
     successMessage,
+    authUser,
     emailFocused,
     pwdFocused,
     emailValid,
@@ -290,6 +394,9 @@ export function useAuthForm() {
     onPwdBlur,
     onPwdFocus,
     onConfirmBlur,
+    onCodeBlur,
+    onCodeInput,
+    sendCode,
     applySuffix,
     onSlideComplete,
     submit,

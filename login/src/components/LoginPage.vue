@@ -1,10 +1,14 @@
 <script setup>
 import { ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import StatusRail from './StatusRail.vue'
 import SlideGate from './SlideGate.vue'
 import SuccessOverlay from './SuccessOverlay.vue'
 import { useAuthForm } from '../composables/useAuthForm'
+import { useSession } from '../composables/useSession'
 
+const router = useRouter()
+const { setSession } = useSession()
 const slideRef = ref(null)
 
 const {
@@ -15,12 +19,19 @@ const {
   password,
   confirmPassword,
   displayName,
+  verificationCode,
+  sendCountdown,
+  codeHint,
+  codeError,
+  canSendCode,
+  sendCodeBusy,
   remember,
   showPassword,
   slideDone,
   busy,
   successVisible,
   successMessage,
+  authUser,
   emailFocused,
   pwdFocused,
   emailValid,
@@ -44,6 +55,9 @@ const {
   onPwdBlur,
   onPwdFocus,
   onConfirmBlur,
+  onCodeBlur,
+  onCodeInput,
+  sendCode,
   applySuffix,
   onSlideComplete,
   submit,
@@ -52,6 +66,15 @@ const {
 
 watch(slideDone, (done, prev) => {
   if (prev && !done) slideRef.value?.reset()
+})
+
+watch(successVisible, (visible) => {
+  if (!visible || !authUser.value) return
+  setSession(authUser.value)
+  window.setTimeout(() => {
+    successVisible.value = false
+    router.push('/home')
+  }, 900)
 })
 
 async function handleSubmit(e) {
@@ -160,6 +183,48 @@ async function handleSubmit(e) {
                 </button>
               </div>
             </Transition>
+          </div>
+
+          <!-- 注册：验证码 -->
+          <div
+            v-if="isRegister"
+            class="field"
+            :class="{ 'field--invalid': codeError }"
+          >
+            <label class="field__label" for="verificationCode">邮箱验证码</label>
+            <div class="field__row field__row--code">
+              <input
+                id="verificationCode"
+                v-model="verificationCode"
+                class="field__input field__input--code"
+                type="text"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                maxlength="6"
+                pattern="[0-9]{6}"
+                placeholder="6 位数字"
+                :aria-invalid="!!codeError"
+                :aria-describedby="codeError ? 'codeError' : 'codeHint'"
+                @input="onCodeInput"
+                @blur="onCodeBlur"
+              />
+              <button
+                type="button"
+                class="send-code"
+                :disabled="!canSendCode"
+                :class="{ 'send-code--busy': sendCodeBusy }"
+                @click="sendCode"
+              >
+                <span v-if="sendCodeBusy">发送中…</span>
+                <span v-else-if="sendCountdown > 0">{{ sendCountdown }}s</span>
+                <span v-else>发送验证码</span>
+              </button>
+            </div>
+            <p v-if="codeError" id="codeError" class="field__error" role="alert">{{ codeError }}</p>
+            <p v-else-if="codeHint" id="codeHint" class="field__hint field__hint--ok">{{ codeHint }}</p>
+            <p v-else id="codeHint" class="field__hint">
+              点击发送后查收 characteryebby@163.com 邮件（可能在垃圾箱）
+            </p>
           </div>
 
           <!-- 注册：昵称 -->
@@ -500,6 +565,52 @@ async function handleSubmit(e) {
   position: relative;
   display: flex;
   align-items: center;
+}
+
+.field__row--code {
+  gap: 8px;
+}
+
+.field__input--code {
+  flex: 1;
+  min-width: 0;
+  padding-right: 14px;
+  letter-spacing: 0.2em;
+  font-variant-numeric: tabular-nums;
+}
+
+.send-code {
+  flex-shrink: 0;
+  height: 48px;
+  padding: 0 14px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: opacity 0.2s var(--ease), transform 0.2s var(--ease);
+}
+
+.send-code:hover:not(:disabled) {
+  opacity: 0.92;
+}
+
+.send-code:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.send-code--busy {
+  pointer-events: none;
+}
+
+.field__hint--ok {
+  color: var(--success);
 }
 
 .field__input {

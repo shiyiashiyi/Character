@@ -2,10 +2,26 @@
   "Logging": {
     "LogLevel": {
       "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
+      "Microsoft.AspNetCore": "Warning",
+      "MailKit": "Information"
     }
   },
   "ConnectionStrings": {
     "CharacterSkills": "Server=你的服务器\\实例名;Database=CharacterSkills;User Id=你的SQL登录名;Password=你的密码;TrustServerCertificate=True;Encrypt=False;"
+  },
+  "Smtp": {
+    "Host": "smtp.163.com",
+    "Port": 465,
+    "UseSsl": true,
+    "User": "characteryebby@163.com",
+    "Password": "你的163授权码",
+    "FromEmail": "characteryebby@163.com",
+    "FromName": "Character",
+    "DryRun": true
+  },
+  "EmailVerification": {
+    "CodeExpiryMinutes": 10,
+    "ResendCooldownSeconds": 60,
+    "MaxAttempts": 5
   }
 }

@@ -21,8 +21,17 @@ async function postAuth(path, body) {
   return data
 }
 
-export function register({ email, password, displayName }) {
-  return postAuth('/api/auth/register', { email, password, displayName: displayName || null })
+export function sendVerificationCode(email) {
+  return postAuth('/api/auth/send-code', { email })
+}
+
+export function register({ email, password, displayName, verificationCode }) {
+  return postAuth('/api/auth/register', {
+    email,
+    password,
+    displayName: displayName || null,
+    verificationCode,
+  })
 }
 
 export function login({ email, password }) {
