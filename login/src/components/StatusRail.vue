@@ -59,7 +59,7 @@ const { status } = useStatus()
   height: 100%;
   border-radius: inherit;
   background: var(--accent);
-  transition: width 0.4s var(--ease);
+  transition: width 0.28s var(--ease-in-out);
 }
 
 .status-rail__text {

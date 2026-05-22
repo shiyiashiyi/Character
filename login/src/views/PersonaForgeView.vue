@@ -215,8 +215,15 @@ function downloadEvidence() {
   font: inherit;
   font-size: 14px;
   cursor: pointer;
-  padding: 0;
+  padding: 4px 0;
   margin-bottom: 12px;
+  border-radius: 6px;
+  transition: opacity 0.16s var(--ease-out), transform 0.16s var(--ease-out);
+}
+
+.back:active {
+  transform: scale(0.97);
+  opacity: 0.75;
 }
 
 .forge__title {
@@ -273,7 +280,7 @@ function downloadEvidence() {
   border-radius: var(--radius-lg);
   padding: 36px 20px;
   text-align: center;
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color 0.2s var(--ease-out), background 0.2s var(--ease-out);
 }
 
 .drop--drag,
@@ -315,7 +322,8 @@ function downloadEvidence() {
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s, transform 0.2s var(--ease-spring);
+  transition: opacity 0.2s var(--ease-out), transform 0.16s var(--ease-out),
+    background 0.2s var(--ease-out);
 }
 
 .btn-primary:disabled {
@@ -323,8 +331,14 @@ function downloadEvidence() {
   cursor: not-allowed;
 }
 
-.btn-primary:not(:disabled):hover {
-  transform: scale(1.01);
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:not(:disabled):hover {
+    opacity: 0.92;
+  }
+}
+
+.btn-primary:not(:disabled):active {
+  transform: scale(0.97);
 }
 
 .result {
@@ -366,6 +380,11 @@ function downloadEvidence() {
   font: inherit;
   font-size: 14px;
   cursor: pointer;
+  transition: transform 0.16s var(--ease-out), opacity 0.2s var(--ease-out);
+}
+
+.btn-dl:active {
+  transform: scale(0.97);
 }
 
 .btn-dl--alt {
@@ -387,6 +406,12 @@ function downloadEvidence() {
   font: inherit;
   font-size: 13px;
   cursor: pointer;
+  transition: border-color 0.2s var(--ease-out), color 0.2s var(--ease-out),
+    transform 0.16s var(--ease-out);
+}
+
+.tabs button:active {
+  transform: scale(0.97);
 }
 
 .tabs button.active {

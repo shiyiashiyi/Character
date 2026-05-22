@@ -464,7 +464,7 @@ async function handleSubmit(e) {
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--separator-opaque);
-  transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
+  transition: opacity 0.28s var(--ease-out), transform 0.28s var(--ease-out);
 }
 
 .card--loading {
@@ -473,7 +473,7 @@ async function handleSubmit(e) {
 
 .card--hidden {
   opacity: 0;
-  transform: scale(0.98) translateY(8px);
+  transform: scale(0.97) translateY(6px);
 }
 
 .card__head {
@@ -522,7 +522,12 @@ async function handleSubmit(e) {
   font-weight: 500;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: background 0.25s var(--ease), color 0.25s, box-shadow 0.25s;
+  transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out),
+    box-shadow 0.2s var(--ease-out), transform 0.16s var(--ease-out);
+}
+
+.tabs__btn:active {
+  transform: scale(0.97);
 }
 
 .tabs__btn--active {
@@ -593,11 +598,15 @@ async function handleSubmit(e) {
   letter-spacing: -0.02em;
   white-space: nowrap;
   cursor: pointer;
-  transition: opacity 0.2s var(--ease), transform 0.2s var(--ease);
+  transition: opacity 0.2s var(--ease-out), transform 0.16s var(--ease-out);
 }
 
 .send-code:hover:not(:disabled) {
   opacity: 0.92;
+}
+
+.send-code:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .send-code:disabled {
@@ -670,12 +679,19 @@ async function handleSubmit(e) {
   color: var(--text-secondary);
   cursor: pointer;
   border-radius: 8px;
-  transition: color 0.2s, background 0.2s;
+  transition: color 0.2s var(--ease-out), background 0.2s var(--ease-out),
+    transform 0.16s var(--ease-out);
 }
 
-.field__toggle:hover {
-  color: var(--text);
-  background: var(--fill-tertiary);
+@media (hover: hover) and (pointer: fine) {
+  .field__toggle:hover {
+    color: var(--text);
+    background: var(--fill-tertiary);
+  }
+}
+
+.field__toggle:active {
+  transform: scale(0.97);
 }
 
 .field__hint,
@@ -710,14 +726,21 @@ async function handleSubmit(e) {
   background: var(--surface);
   color: var(--text-secondary);
   cursor: pointer;
-  transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s var(--ease-spring);
+  transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out),
+    border-color 0.2s var(--ease-out), transform 0.16s var(--ease-out);
 }
 
-.chip:hover {
-  background: var(--fill-tertiary);
-  color: var(--accent);
-  border-color: rgba(0, 113, 227, 0.3);
-  transform: scale(1.02);
+@media (hover: hover) and (pointer: fine) {
+  .chip:hover {
+    background: var(--fill-tertiary);
+    color: var(--accent);
+    border-color: rgba(0, 113, 227, 0.3);
+    transform: scale(1.02);
+  }
+}
+
+.chip:active {
+  transform: scale(0.97);
 }
 
 .meter {
@@ -830,7 +853,8 @@ async function handleSubmit(e) {
   color: #fff;
   background: var(--accent);
   cursor: pointer;
-  transition: background 0.2s, transform 0.2s var(--ease-spring), opacity 0.2s;
+  transition: background 0.2s var(--ease-out), transform 0.16s var(--ease-out),
+    opacity 0.2s var(--ease-out);
 }
 
 .btn:hover:not(:disabled) {
@@ -838,7 +862,7 @@ async function handleSubmit(e) {
 }
 
 .btn:active:not(:disabled) {
-  transform: scale(0.98);
+  transform: scale(0.97);
 }
 
 .btn:disabled {
@@ -859,7 +883,7 @@ async function handleSubmit(e) {
   border: 2px solid rgba(255, 255, 255, 0.35);
   border-top-color: #fff;
   border-radius: 50%;
-  animation: spin 0.65s linear infinite;
+  animation: spin 0.55s linear infinite;
 }
 
 @keyframes spin {
@@ -903,34 +927,41 @@ async function handleSubmit(e) {
   cursor: pointer;
   display: grid;
   place-items: center;
-  transition: background 0.2s, transform 0.25s var(--ease-spring), box-shadow 0.2s;
+  transition: background 0.2s var(--ease-out), transform 0.16s var(--ease-out),
+    box-shadow 0.2s var(--ease-out);
 }
 
-.oauth__btn:hover {
-  background: var(--fill-tertiary);
-  transform: scale(1.04);
-  box-shadow: var(--shadow-sm);
+@media (hover: hover) and (pointer: fine) {
+  .oauth__btn:hover {
+    background: var(--fill-tertiary);
+    transform: scale(1.03);
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+.oauth__btn:active {
+  transform: scale(0.97);
 }
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.2s, transform 0.2s var(--ease-spring);
+  transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
 }
 
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-  transform: scale(0.8);
+  transform: scale(0.95);
 }
 
 .chips-enter-active,
 .chips-leave-active {
-  transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
+  transition: opacity 0.22s var(--ease-out), transform 0.22s var(--ease-out);
 }
 
 .chips-enter-from,
 .chips-leave-to {
   opacity: 0;
-  transform: translateY(-6px);
+  transform: translateY(-4px) scale(0.98);
 }
 </style>

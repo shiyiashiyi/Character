@@ -49,7 +49,7 @@ onMounted(() => {
 function openItem(item, index) {
   if (!item.enabled) return
   activeIndex.value = index
-  setTimeout(() => router.push(item.route), 180)
+  setTimeout(() => router.push(item.route), 140)
 }
 
 function logout() {
@@ -112,7 +112,7 @@ function logout() {
   overflow: hidden;
   opacity: 0;
   transform: translateY(12px);
-  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
+  transition: opacity 0.4s var(--ease-out), transform 0.4s var(--ease-out);
 }
 
 .home--in {
@@ -210,12 +210,18 @@ function logout() {
   font: inherit;
   font-size: 14px;
   cursor: pointer;
-  transition: background 0.2s, transform 0.2s var(--ease-spring);
+  transition: background 0.2s var(--ease-out), transform 0.16s var(--ease-out);
 }
 
-.btn-ghost:hover {
-  background: var(--fill-tertiary);
-  transform: scale(1.02);
+@media (hover: hover) and (pointer: fine) {
+  .btn-ghost:hover {
+    background: var(--fill-tertiary);
+    transform: scale(1.02);
+  }
+}
+
+.btn-ghost:active {
+  transform: scale(0.97);
 }
 
 .menu {
@@ -235,22 +241,22 @@ function logout() {
   cursor: pointer;
   overflow: hidden;
   transition:
-    transform 0.35s var(--ease-spring),
-    box-shadow 0.35s var(--ease),
-    border-color 0.25s;
+    transform 0.28s var(--ease-out),
+    box-shadow 0.28s var(--ease-out),
+    border-color 0.22s var(--ease-out);
   opacity: 0;
-  transform: translateY(16px);
+  transform: translateY(10px) scale(0.98);
 }
 
 .home--in .menu-card--delay {
-  animation: card-in 0.55s var(--ease) forwards;
-  animation-delay: calc(0.08s * var(--i));
+  animation: card-in 0.4s var(--ease-out) forwards;
+  animation-delay: calc(0.06s * var(--i));
 }
 
 @keyframes card-in {
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -259,11 +265,23 @@ function logout() {
   opacity: 0.55;
 }
 
-.menu-card:not(:disabled):hover,
-.menu-card--on {
+.menu-card:not(:disabled).menu-card--on {
   transform: translateY(-6px) scale(1.02);
   border-color: rgba(0, 113, 227, 0.35);
   box-shadow: 0 20px 50px rgba(0, 113, 227, 0.12);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .menu-card:not(:disabled):hover {
+    transform: translateY(-6px) scale(1.02);
+    border-color: rgba(0, 113, 227, 0.35);
+    box-shadow: 0 20px 50px rgba(0, 113, 227, 0.12);
+  }
+}
+
+.menu-card:not(:disabled):active {
+  transform: translateY(-2px) scale(0.97);
+  transition-duration: 0.12s;
 }
 
 .menu-card__shine {
@@ -277,9 +295,11 @@ function logout() {
   pointer-events: none;
 }
 
-.menu-card:not(:disabled):hover .menu-card__shine {
-  opacity: 1;
-  animation: spin 4s linear infinite;
+@media (hover: hover) and (pointer: fine) {
+  .menu-card:not(:disabled):hover .menu-card__shine {
+    opacity: 1;
+    animation: spin 4s linear infinite;
+  }
 }
 
 @keyframes spin {

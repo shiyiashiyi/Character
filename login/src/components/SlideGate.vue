@@ -42,7 +42,7 @@ function snapBack() {
   setThumb(0, true)
   setTimeout(() => {
     thumbTransition.value = false
-  }, 400)
+  }, 220)
 }
 
 let startX = 0
@@ -145,7 +145,7 @@ defineExpose({
         aria-label="登录确认滑块"
         :style="{
           transform: `translateX(${thumbX}px)`,
-          transition: thumbTransition ? 'transform 0.45s var(--ease-spring)' : 'none',
+          transition: thumbTransition ? 'transform 0.22s var(--ease-out)' : 'none',
         }"
         @mousedown="onMouseDown"
         @touchstart.passive="onTouchStart"

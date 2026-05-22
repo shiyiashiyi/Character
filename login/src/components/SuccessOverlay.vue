@@ -54,14 +54,14 @@ defineProps({
   stroke: var(--success);
   stroke-dasharray: 151;
   stroke-dashoffset: 151;
-  animation: draw-ring 0.6s var(--ease) forwards;
+  animation: draw-ring 0.5s var(--ease-out) forwards;
 }
 
 .check {
   stroke: var(--success);
   stroke-dasharray: 48;
   stroke-dashoffset: 48;
-  animation: draw-check 0.4s 0.35s var(--ease) forwards;
+  animation: draw-check 0.35s 0.3s var(--ease-out) forwards;
 }
 
 @keyframes draw-ring {
@@ -87,14 +87,20 @@ defineProps({
   letter-spacing: -0.01em;
 }
 
-.overlay-enter-active,
-.overlay-leave-active {
-  transition: opacity 0.45s var(--ease);
+.overlay-enter-active {
+  transition: opacity 0.28s var(--ease-out);
 }
 
-.overlay-enter-active .success-overlay__card,
+.overlay-leave-active {
+  transition: opacity 0.18s var(--ease-out);
+}
+
+.overlay-enter-active .success-overlay__card {
+  transition: transform 0.28s var(--ease-out), opacity 0.28s var(--ease-out);
+}
+
 .overlay-leave-active .success-overlay__card {
-  transition: transform 0.5s var(--ease-spring), opacity 0.45s var(--ease);
+  transition: transform 0.18s var(--ease-out), opacity 0.18s var(--ease-out);
 }
 
 .overlay-enter-from,
@@ -102,9 +108,13 @@ defineProps({
   opacity: 0;
 }
 
-.overlay-enter-from .success-overlay__card,
+.overlay-enter-from .success-overlay__card {
+  opacity: 0;
+  transform: scale(0.95) translateY(8px);
+}
+
 .overlay-leave-to .success-overlay__card {
   opacity: 0;
-  transform: scale(0.94) translateY(12px);
+  transform: scale(0.97) translateY(4px);
 }
 </style>
