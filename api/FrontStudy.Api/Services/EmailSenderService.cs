@@ -11,6 +11,7 @@ namespace FrontStudy.Api.Services;
 
 public class EmailSenderService(
     IOptions<SmtpOptions> smtpOptions,
+    IHostEnvironment env,
     ILogger<EmailSenderService> logger)
 {
     private readonly SmtpOptions _smtp = smtpOptions.Value;
@@ -23,17 +24,14 @@ public class EmailSenderService(
         var subject = "Character 注册验证码";
         var body = $"您的 Character 注册验证码为：{code}\n\n验证码 10 分钟内有效，请勿泄露给他人。";
 
-        if (_smtp.DryRun)
+        if (ShouldDryRun())
         {
             logger.LogWarning(
-                "Smtp:DryRun=true，未发送邮件。收件人={Email}，验证码={Code}",
+                "未真实发信（DryRun 或未配置授权码）。收件人={Email}，验证码={Code}",
                 toEmail,
                 code);
             return;
         }
-
-        if (string.IsNullOrWhiteSpace(_smtp.User) || string.IsNullOrWhiteSpace(_smtp.Password))
-            throw new InvalidOperationException("未配置 Smtp:User 或 Smtp:Password，无法发送邮件。");
 
         var message = new MimeMessage();
         message.From.Add(new MailboxAddress(_smtp.FromName, _smtp.FromEmail));
@@ -53,4 +51,9 @@ public class EmailSenderService(
 
         logger.LogInformation("已向 {Email} 发送注册验证码邮件", toEmail);
     }
+
+    private bool ShouldDryRun() =>
+        _smtp.DryRun
+        || string.IsNullOrWhiteSpace(_smtp.Password)
+        || (string.IsNullOrWhiteSpace(_smtp.User) && env.IsDevelopment());
 }
