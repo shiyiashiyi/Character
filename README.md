@@ -18,6 +18,22 @@
 
 连接字符串：复制 `api/FrontStudy.Api/appsettings.Development.json.example` 为 `appsettings.Development.json` 并填写密码；前端复制 `login/.env.example` 为 `.env.development`。
 
+如需使用 Persona 工坊的 **AI 精修** 模式，还需要在 `appsettings.Development.json` 中配置 `AiProvider`：
+
+```json
+"AiProvider": {
+  "Provider": "DeepSeek",
+  "ApiKind": "ChatCompletions",
+  "ApiKey": "DEEPSEEK_API_KEY_HERE",
+  "Model": "deepseek-v4-flash",
+  "BaseUrl": "https://api.deepseek.com",
+  "MaxOutputTokens": 8000,
+  "Temperature": 0.3
+}
+```
+
+也可以参考 `api/FrontStudy.Api/appsettings.ai-providers.example.json` 切换为 OpenAI 或其他 OpenAI-compatible 服务。若不配置 API Key，Persona 工坊仍可使用默认的规则模式。
+
 ## 启动后端 API
 
 ```bash
@@ -43,7 +59,7 @@ npm run dev
 |------|------|
 | `/login` | 登录 / 注册 |
 | `/home` | 主页（需登录，localStorage 会话） |
-| `/forge` | Persona 工坊：上传小说文本生成 Skill |
+| `/forge` | Persona 工坊：上传小说文本生成 Skill，生成中显示 loading 与步骤进度 |
 
 登录/注册成功约 0.9 秒后自动进入 `/home`。
 
@@ -51,7 +67,12 @@ npm run dev
 
 - `POST /api/auth/register` — 注册
 - `POST /api/auth/login` — 登录
-- `POST /api/persona/forge` — 上传 `.txt`/`.md` + 角色名，生成 `SKILL.md` 与 `source-evidence.md`（multipart：`file`, `characterName`, `workTitle`, `chapterRange`）
+- `POST /api/persona/forge` — 上传 `.txt`/`.md` + 角色名，生成 `SKILL.md` 与 `source-evidence.md`（multipart：`file`, `characterName`, `workTitle`, `chapterRange`, `mode`）
 - `GET /api/health/db` — 数据库连接自检
 
-Persona 生成基于规则抽取 + 模板（对齐 `novel-character-persona-forge`），非大模型；仅供个人/私有使用。
+`mode` 支持：
+
+- `rule`：默认规则模式，基于规则抽取 + 模板生成（对齐 `novel-character-persona-forge`）
+- `ai`：先生成规则草稿，再调用已配置的 AI Provider 精修 Skill 与证据文档
+
+Persona 生成仅供个人/私有使用。上传小说文本时建议使用 `.txt` 或 `.md`，后端会尝试兼容 UTF-8 与常见中文文本编码。

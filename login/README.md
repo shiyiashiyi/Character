@@ -25,6 +25,7 @@ npm run preview
 
 - **注册**：切换到「注册」标签，填写邮箱与密码
 - **登录**：切换到「登录」标签，滑动确认后提交
+- **Persona 工坊**：登录后进入 `/forge`，上传 `.txt` / `.md` 小说文本并生成角色 Skill
 
 ## 演示账号（可选）
 
@@ -45,7 +46,15 @@ login/
     │   ├── StatusRail.vue
     │   ├── SlideGate.vue
     │   └── SuccessOverlay.vue
+    ├── views/
+    │   ├── HomeView.vue
+    │   ├── LoginView.vue
+    │   └── PersonaForgeView.vue
+    ├── api/
+    │   ├── authApi.js
+    │   └── personaApi.js
     ├── composables/
+    │   ├── useSession.js
     │   ├── useStatus.js
     │   └── useAuthForm.js
     └── styles/
@@ -60,3 +69,4 @@ login/
 - 滑动确认防误触登录
 - 分阶段登录进度（感知性能优化）
 - 成功层毛玻璃过渡动画
+- Persona 生成等待态：loading 图标、当前步骤文本、步骤列表与进度条
