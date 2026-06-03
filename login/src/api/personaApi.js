@@ -4,10 +4,11 @@
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5050'
 
-export async function forgePersona({ file, characterName, workTitle, chapterRange }) {
+export async function forgePersona({ file, characterName, workTitle, chapterRange, mode }) {
   const form = new FormData()
   form.append('file', file)
   form.append('characterName', characterName)
+  if (mode) form.append('mode', mode)
   if (workTitle) form.append('workTitle', workTitle)
   if (chapterRange) form.append('chapterRange', chapterRange)
 

@@ -23,5 +23,14 @@
     "CodeExpiryMinutes": 10,
     "ResendCooldownSeconds": 60,
     "MaxAttempts": 5
+  },
+  "AiProvider": {
+    "Provider": "DeepSeek",
+    "ApiKind": "ChatCompletions",
+    "ApiKey": "DEEPSEEK_API_KEY_HERE",
+    "Model": "deepseek-v4-flash",
+    "BaseUrl": "https://api.deepseek.com",
+    "MaxOutputTokens": 8000,
+    "Temperature": 0.3
   }
 }

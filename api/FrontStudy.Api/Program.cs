@@ -16,10 +16,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection(SmtpOptions.SectionName));
 builder.Services.Configure<EmailVerificationOptions>(
     builder.Configuration.GetSection(EmailVerificationOptions.SectionName));
+builder.Services.Configure<AiProviderOptions>(builder.Configuration.GetSection(AiProviderOptions.SectionName));
 builder.Services.AddScoped<EmailSenderService>();
 builder.Services.AddScoped<EmailVerificationService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddSingleton<PersonaForgeService>();
+builder.Services.AddHttpClient<AiPersonaRefinementService>();
 
 builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 12 * 1024 * 1024);
 builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(o =>
