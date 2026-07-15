@@ -8,15 +8,27 @@ defineProps({
 <template>
   <Transition name="overlay">
     <div v-if="visible" class="success-overlay" role="dialog" aria-modal="true" aria-labelledby="successTitle">
+      <!-- Magical background burst -->
+      <div class="success-overlay__bg" aria-hidden="true">
+        <div class="burst burst-1"></div>
+        <div class="burst burst-2"></div>
+      </div>
+      
       <div class="success-overlay__card">
         <div class="success-overlay__icon" aria-hidden="true">
-          <svg viewBox="0 0 52 52" width="56" height="56">
-            <circle class="ring" cx="26" cy="26" r="24" fill="none" stroke-width="2.5" />
-            <path class="check" fill="none" stroke-width="2.5" d="M14 27l8 8 16-18" />
+          <svg viewBox="0 0 80 80" width="80" height="80">
+            <defs>
+              <linearGradient id="successGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#34d399" />
+                <stop offset="100%" stop-color="#10b981" />
+              </linearGradient>
+            </defs>
+            <circle class="ring" cx="40" cy="40" r="36" fill="none" stroke="url(#successGrad)" stroke-width="4" stroke-linecap="round" />
+            <path class="check" fill="none" stroke="url(#successGrad)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" d="M24 42l10 10 22-24" />
           </svg>
         </div>
-        <h2 id="successTitle" class="success-overlay__title">登录成功</h2>
-        <p class="success-overlay__sub">{{ message }}</p>
+        <h2 id="successTitle" class="success-overlay__title">验证通过</h2>
+        <p class="success-overlay__sub">{{ message || '即将进入系统' }}</p>
       </div>
     </div>
   </Transition>
@@ -30,91 +42,147 @@ defineProps({
   display: grid;
   place-items: center;
   padding: 24px;
-  background: rgba(251, 251, 253, 0.72);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  perspective: 1000px;
+}
+
+.success-overlay__bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.burst {
+  position: absolute;
+  top: 50%; left: 50%;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  filter: blur(60px);
+  opacity: 0;
+}
+
+.burst-1 {
+  width: 400px; height: 400px;
+  background: rgba(16, 185, 129, 0.4);
+}
+.burst-2 {
+  width: 300px; height: 300px;
+  background: rgba(59, 130, 246, 0.3);
+}
+
+.overlay-enter-active .burst-1 {
+  animation: burst-pop 1s var(--ease-out) forwards;
+}
+.overlay-enter-active .burst-2 {
+  animation: burst-pop 1s 0.2s var(--ease-out) forwards;
+}
+
+@keyframes burst-pop {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
 }
 
 .success-overlay__card {
+  position: relative;
   text-align: center;
-  padding: 40px 48px;
-  background: var(--surface);
+  padding: 48px 56px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
-  border: 1px solid var(--separator);
-  max-width: 360px;
+  box-shadow: 0 30px 80px rgba(16, 185, 129, 0.15), inset 0 1px 2px #fff;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  max-width: 400px;
   width: 100%;
+  z-index: 1;
 }
 
 .success-overlay__icon {
-  margin: 0 auto 20px;
+  margin: 0 auto 24px;
+  display: flex;
+  justify-content: center;
 }
 
 .ring {
-  stroke: var(--success);
-  stroke-dasharray: 151;
-  stroke-dashoffset: 151;
-  animation: draw-ring 0.5s var(--ease-out) forwards;
+  stroke-dasharray: 227;
+  stroke-dashoffset: 227;
+  transform-origin: center;
+  transform: rotate(-90deg);
 }
 
 .check {
-  stroke: var(--success);
-  stroke-dasharray: 48;
-  stroke-dashoffset: 48;
-  animation: draw-check 0.35s 0.3s var(--ease-out) forwards;
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+}
+
+.overlay-enter-active .ring {
+  animation: draw-ring 0.8s var(--ease-bouncy) forwards;
+}
+
+.overlay-enter-active .check {
+  animation: draw-check 0.5s 0.4s var(--ease-spring) forwards;
 }
 
 @keyframes draw-ring {
-  to { stroke-dashoffset: 0; }
+  0% { stroke-dashoffset: 227; transform: rotate(-90deg) scale(0.8); }
+  100% { stroke-dashoffset: 0; transform: rotate(0) scale(1); }
 }
 
 @keyframes draw-check {
-  to { stroke-dashoffset: 0; }
+  0% { stroke-dashoffset: 60; }
+  100% { stroke-dashoffset: 0; }
 }
 
 .success-overlay__title {
-  margin: 0 0 8px;
-  font-size: 28px;
-  font-weight: 600;
-  letter-spacing: -0.03em;
+  margin: 0 0 12px;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   color: var(--text);
+  background: linear-gradient(135deg, #111, #444);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .success-overlay__sub {
   margin: 0;
-  font-size: 15px;
+  font-size: 16px;
   color: var(--text-secondary);
-  letter-spacing: -0.01em;
+  font-weight: 500;
 }
 
-.overlay-enter-active {
-  transition: opacity 0.28s var(--ease-out);
-}
-
+/* Transitions */
+.overlay-enter-active,
 .overlay-leave-active {
-  transition: opacity 0.18s var(--ease-out);
+  transition: opacity 0.5s var(--ease);
 }
-
-.overlay-enter-active .success-overlay__card {
-  transition: transform 0.28s var(--ease-out), opacity 0.28s var(--ease-out);
-}
-
-.overlay-leave-active .success-overlay__card {
-  transition: transform 0.18s var(--ease-out), opacity 0.18s var(--ease-out);
-}
-
 .overlay-enter-from,
 .overlay-leave-to {
   opacity: 0;
 }
 
-.overlay-enter-from .success-overlay__card {
-  opacity: 0;
-  transform: scale(0.95) translateY(8px);
+.overlay-enter-active .success-overlay__card {
+  animation: card-pop 0.6s var(--ease-bouncy) forwards;
 }
 
-.overlay-leave-to .success-overlay__card {
+.overlay-leave-active .success-overlay__card {
+  transition: transform 0.4s var(--ease), opacity 0.4s var(--ease);
+  transform: scale(0.9) translateY(20px) rotateX(10deg);
   opacity: 0;
-  transform: scale(0.97) translateY(4px);
+}
+
+@keyframes card-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(40px) rotateX(-20deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0) rotateX(0);
+  }
 }
 </style>

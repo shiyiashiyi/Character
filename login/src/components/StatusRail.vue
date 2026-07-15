@@ -44,7 +44,7 @@ const { status } = useStatus()
 }
 
 .status-rail[data-tone='busy'] {
-  background: rgba(0, 113, 227, 0.06);
+  background: rgba(26, 26, 28, 0.05);
 }
 
 .status-rail__track {

@@ -140,7 +140,7 @@ function logout() {
   height: 420px;
   top: -120px;
   right: -80px;
-  background: radial-gradient(circle, rgba(0, 113, 227, 0.2), transparent 70%);
+  background: radial-gradient(circle, rgba(230, 220, 210, 0.5), transparent 70%);
 }
 
 .orb--2 {
@@ -148,7 +148,7 @@ function logout() {
   height: 360px;
   bottom: -100px;
   left: -60px;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.15), transparent 70%);
+  background: radial-gradient(circle, rgba(210, 215, 225, 0.4), transparent 70%);
   animation-delay: -5s;
 }
 
@@ -267,15 +267,15 @@ function logout() {
 
 .menu-card:not(:disabled).menu-card--on {
   transform: translateY(-6px) scale(1.02);
-  border-color: rgba(0, 113, 227, 0.35);
-  box-shadow: 0 20px 50px rgba(0, 113, 227, 0.12);
+  border-color: rgba(26, 26, 28, 0.15);
+  box-shadow: 0 20px 50px rgba(26, 26, 28, 0.06);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .menu-card:not(:disabled):hover {
     transform: translateY(-6px) scale(1.02);
-    border-color: rgba(0, 113, 227, 0.35);
-    box-shadow: 0 20px 50px rgba(0, 113, 227, 0.12);
+    border-color: rgba(26, 26, 28, 0.15);
+    box-shadow: 0 20px 50px rgba(26, 26, 28, 0.06);
   }
 }
 
@@ -289,7 +289,7 @@ function logout() {
   inset: -50% auto auto -50%;
   width: 80%;
   height: 80%;
-  background: conic-gradient(from 0deg, transparent, rgba(0, 113, 227, 0.15), transparent);
+  background: conic-gradient(from 0deg, transparent, rgba(26, 26, 28, 0.08), transparent);
   opacity: 0;
   transition: opacity 0.35s;
   pointer-events: none;
@@ -311,8 +311,8 @@ function logout() {
   height: 44px;
   border-radius: 12px;
   margin-bottom: 14px;
-  background: linear-gradient(135deg, var(--accent), #6366f1);
-  box-shadow: 0 8px 24px rgba(0, 113, 227, 0.25);
+  background: linear-gradient(135deg, var(--accent), #555558);
+  box-shadow: 0 8px 24px rgba(26, 26, 28, 0.15);
 }
 
 .menu-card__title {

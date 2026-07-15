@@ -31,3 +31,4 @@ appsettings.Development.json
 
 # Vite
 login/node_modules/.vite/
+.codex-runlogs/

@@ -412,7 +412,7 @@ onBeforeUnmount(clearStageTimer)
 .mode__choice--active {
   border-color: var(--accent);
   color: var(--accent);
-  background: rgba(0, 113, 227, 0.04);
+  background: rgba(26, 26, 28, 0.03);
 }
 
 .mode__hint {
@@ -443,7 +443,7 @@ onBeforeUnmount(clearStageTimer)
 .drop--drag,
 .drop--has {
   border-color: var(--accent);
-  background: rgba(0, 113, 227, 0.04);
+  background: rgba(26, 26, 28, 0.03);
 }
 
 .drop__label {
@@ -467,9 +467,9 @@ onBeforeUnmount(clearStageTimer)
   display: grid;
   gap: 12px;
   padding: 14px;
-  border: 1px solid rgba(0, 113, 227, 0.22);
+  border: 1px solid rgba(26, 26, 28, 0.12);
   border-radius: var(--radius-md);
-  background: rgba(0, 113, 227, 0.04);
+  background: rgba(26, 26, 28, 0.03);
 }
 
 .loading-panel__head {
@@ -482,7 +482,7 @@ onBeforeUnmount(clearStageTimer)
 .spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(0, 113, 227, 0.18);
+  border: 2px solid rgba(26, 26, 28, 0.1);
   border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -512,7 +512,7 @@ onBeforeUnmount(clearStageTimer)
   height: 4px;
   overflow: hidden;
   border-radius: 999px;
-  background: rgba(0, 113, 227, 0.12);
+  background: rgba(26, 26, 28, 0.08);
 }
 
 .progress span {
@@ -562,7 +562,7 @@ onBeforeUnmount(clearStageTimer)
 }
 
 .stage-list__item--active::before {
-  box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.12);
+  box-shadow: 0 0 0 4px rgba(26, 26, 28, 0.08);
 }
 
 @keyframes spin {

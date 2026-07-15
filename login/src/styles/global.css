@@ -1,29 +1,42 @@
-/* global.css — Apple 风格设计令牌与基础样式 */
+/* global.css — Advanced Light Theme Design Tokens & Base Styles */
 
 :root {
-  --bg: #fbfbfd;
-  --surface: #ffffff;
-  --text: #1d1d1f;
-  --text-secondary: #6e6e73;
-  --text-tertiary: #86868b;
-  --separator: rgba(0, 0, 0, 0.06);
-  --separator-opaque: #d2d2d7;
-  --fill-tertiary: #f5f5f7;
-  --accent: #0071e3;
-  --accent-hover: #0077ed;
-  --success: #34c759;
-  --warn: #ff9500;
-  --error: #ff3b30;
-  --radius-sm: 10px;
-  --radius-xl: 18px;
-  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.08);
-  /* 强 ease-out：UI 入场/反馈即时响应 */
-  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  /* 高级感炫彩浅色设计令牌 */
+  --bg: #f5f7fa; /* 极简的冷灰白背景 */
+  --surface: rgba(255, 255, 255, 0.6); /* 极致毛玻璃表面 */
+  --surface-solid: #ffffff;
+  --text: #111113; /* 深空灰文字，增加对比度 */
+  --text-secondary: #5e5e63;
+  --text-tertiary: #929299;
+  --separator: rgba(0, 0, 0, 0.04);
+  --separator-opaque: #e2e2e8;
+  --fill-tertiary: rgba(0, 0, 0, 0.02); /* 悬停、按压时的轻量填充 */
+  
+  /* 炫酷主题主色调 - 渐变炫光感 */
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6, #ec4899);
+  
+  --success: #10b981;
+  --warn: #f59e0b;
+  --error: #ef4444;
+  
+  --radius-sm: 14px;
+  --radius-md: 20px;
+  --radius-xl: 32px; /* 更大更平滑的圆角 */
+  
+  /* 多层级柔和光影 */
+  --shadow-sm: 0 4px 20px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 10px 40px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 30px 80px rgba(139, 92, 246, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.7) inset; 
+  --shadow-glow: 0 0 30px rgba(59, 130, 246, 0.3);
+
+  /* 物理弹簧曲线：极致丝滑的动态反馈 */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.8, 0, 0.2, 1);
   --ease: var(--ease-out);
-  --ease-spring: cubic-bezier(0.34, 1.15, 0.64, 1);
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-bouncy: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 *,
@@ -39,10 +52,9 @@ body {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
-    'Helvetica Neue', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  font-size: 17px;
-  line-height: 1.47059;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
   color: var(--text);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
@@ -69,13 +81,6 @@ input:focus-visible {
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-  }
-
-  *,
-  *::before,
-  *::after {
-    transition-property: opacity, color, background-color, border-color, box-shadow, fill,
-      stroke !important;
-    transition-duration: 0.15s !important;
+    transition-duration: 0.01ms !important;
   }
 }
