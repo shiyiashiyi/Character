@@ -67,12 +67,12 @@ npm run dev
 
 - `POST /api/auth/register` — 注册
 - `POST /api/auth/login` — 登录
-- `POST /api/persona/forge` — 上传 `.txt`/`.md` + 角色名，生成 `SKILL.md` 与 `source-evidence.md`（multipart：`file`, `characterName`, `workTitle`, `chapterRange`, `mode`）
+- `POST /api/persona/forge` — 上传 `.txt`/`.md` + 角色名，生成 `character-card.json`、`SKILL.md` 与 `source-evidence.md`（multipart：`file`, `characterName`, `workTitle`, `chapterRange`, `mode`）
 - `GET /api/health/db` — 数据库连接自检
 
 `mode` 支持：
 
-- `rule`：默认规则模式，基于规则抽取 + 模板生成（对齐 `novel-character-persona-forge`）
-- `ai`：先生成规则草稿，再调用已配置的 AI Provider 精修 Skill 与证据文档
+- `rule`：默认规则模式，基于规则抽取 + 模板生成（无需 AI，作为证据索引 / 回退方案）
+- `ai`：多阶段 LLM 流水线——通读原文 → 抽取证据 → 综合人格 → 生成示例对话 → 输出结构化角色卡（`character-card.json`）+ `SKILL.md` + `source-evidence.md`
 
 Persona 生成仅供个人/私有使用。上传小说文本时建议使用 `.txt` 或 `.md`，后端会尝试兼容 UTF-8 与常见中文文本编码。

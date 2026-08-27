@@ -11,7 +11,8 @@ public record PersonaForgeResponse(
     string? WorkTitle,
     PersonaSummaryDto? Summary,
     string? SkillMarkdown,
-    string? EvidenceMarkdown);
+    string? EvidenceMarkdown,
+    string? CardJson);
 
 public record PersonaSummaryDto(
     string OneLiner,

@@ -21,7 +21,8 @@ builder.Services.AddScoped<EmailSenderService>();
 builder.Services.AddScoped<EmailVerificationService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddSingleton<PersonaForgeService>();
-builder.Services.AddHttpClient<AiPersonaRefinementService>();
+builder.Services.AddHttpClient<LlmChatClient>();
+builder.Services.AddScoped<PersonaPipelineService>();
 
 builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 12 * 1024 * 1024);
 builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(o =>

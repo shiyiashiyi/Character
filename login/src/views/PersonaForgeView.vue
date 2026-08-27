@@ -50,6 +50,14 @@ const progressPercent = computed(() =>
   Math.round((currentStageNumber.value / forgeStages.value.length) * 100),
 )
 
+const hasCard = computed(() => !!result.value?.cardJson)
+const previewContent = computed(() => {
+  if (!result.value) return ''
+  if (previewTab.value === 'evidence') return result.value.evidenceMarkdown || ''
+  if (previewTab.value === 'card') return result.value.cardJson || ''
+  return result.value.skillMarkdown || ''
+})
+
 function normalizeResult(data) {
   const s = data.summary
   const summaryText =
@@ -62,6 +70,7 @@ function normalizeResult(data) {
     slug: data.slug,
     skillMarkdown: data.skillMarkdown,
     evidenceMarkdown: data.evidenceMarkdown,
+    cardJson: data.cardJson,
     summary: summaryText,
   }
 }
@@ -159,6 +168,11 @@ function downloadEvidence() {
   download(result.value.evidenceMarkdown, 'source-evidence.md')
 }
 
+function downloadCard() {
+  if (!result.value?.cardJson) return
+  download(result.value.cardJson, 'character-card.json')
+}
+
 onBeforeUnmount(clearStageTimer)
 </script>
 
@@ -202,7 +216,7 @@ onBeforeUnmount(clearStageTimer)
           </label>
         </div>
         <p class="mode__hint">
-          AI 精修会先抽取证据，再让模型基于证据重写 Skill；需要后端配置 OpenAI API Key。
+          AI 模式会通读原文、抽取证据并综合人格与示例对话；需后端配置 AI Provider API Key。
         </p>
       </div>
 
@@ -271,6 +285,9 @@ onBeforeUnmount(clearStageTimer)
         <button type="button" class="btn-dl btn-dl--alt" @click="downloadEvidence">
           下载 source-evidence.md
         </button>
+        <button v-if="hasCard" type="button" class="btn-dl btn-dl--alt" @click="downloadCard">
+          下载 character-card.json
+        </button>
       </div>
 
       <div class="tabs">
@@ -288,13 +305,19 @@ onBeforeUnmount(clearStageTimer)
         >
           source-evidence.md
         </button>
+        <button
+          v-if="hasCard"
+          type="button"
+          :class="{ active: previewTab === 'card' }"
+          @click="previewTab = 'card'"
+        >
+          character-card.json
+        </button>
       </div>
-      <pre class="preview">{{
-        previewTab === 'skill' ? result.skillMarkdown : result.evidenceMarkdown
-      }}</pre>
+      <pre class="preview">{{ previewContent }}</pre>
 
       <p class="note">
-        当前为规则抽取 + 模板填充（非大模型）。台词不足 8 条时会在证据文件中标注。仅供个人/私有使用。
+        规则模式为模板填充；AI 模式由大模型通读原文综合人格。生成结果仅供个人/私有使用，请人工复核。
       </p>
     </section>
   </div>

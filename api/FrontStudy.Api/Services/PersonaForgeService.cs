@@ -70,11 +70,12 @@ public class PersonaForgeService
             work,
             new PersonaSummaryDto(oneLiner, quotes.Count, languageRules, constraints),
             skillMd,
-            evidenceMd);
+            evidenceMd,
+            null);
     }
 
     private static PersonaForgeResponse Fail(string msg) =>
-        new(false, msg, null, null, null, null, null, null);
+        new(false, msg, null, null, null, null, null, null, null);
 
     private static string ToSlug(string name)
     {
