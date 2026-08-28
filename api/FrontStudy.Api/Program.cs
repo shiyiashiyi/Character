@@ -8,6 +8,10 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// 落盘日志：logs/api-{yyyyMMdd}.log（与内置 Console 日志并存）
+builder.Logging.AddProvider(new FileLoggerProvider(
+    Path.Combine(builder.Environment.ContentRootPath, "logs")));
+
 builder.Services.AddControllers();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(
@@ -22,7 +26,11 @@ builder.Services.AddScoped<EmailVerificationService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddSingleton<PersonaForgeService>();
 builder.Services.AddHttpClient<LlmChatClient>();
-builder.Services.AddScoped<PersonaPipelineService>();
+builder.Services.AddSingleton<PersonaPipelineService>();
+builder.Services.AddSingleton<ForgeJobStore>();
+builder.Services.AddSingleton<ForgeJobRunner>();
+builder.Services.AddHostedService<DatabaseInitializer>();
+builder.Services.AddHostedService<EmailVerificationCleanupService>();
 
 builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 12 * 1024 * 1024);
 builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(o =>

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import StatusRail from './StatusRail.vue'
 import SlideGate from './SlideGate.vue'
@@ -10,7 +10,6 @@ import { useSession } from '../composables/useSession'
 const router = useRouter()
 const { setSession } = useSession()
 const slideRef = ref(null)
-const cardRef = ref(null)
 
 const {
   mode,
@@ -65,43 +64,6 @@ const {
   setStatus,
 } = useAuthForm()
 
-// 3D Tilt Effect
-const mouseX = ref(0)
-const mouseY = ref(0)
-let tiltRaf = null
-
-function onMouseMove(e) {
-  if (successVisible.value || busy.value || isRegister.value) return
-  if (emailFocused.value || pwdFocused.value) return
-  if (e.target?.closest?.('input, button, a, label, .field, .tabs, .slide-gate')) {
-    mouseX.value = 0
-    mouseY.value = 0
-    return
-  }
-  if (!cardRef.value) return
-  if (tiltRaf) cancelAnimationFrame(tiltRaf)
-  tiltRaf = requestAnimationFrame(() => {
-    const rect = cardRef.value.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    const centerX = rect.width / 2
-    const centerY = rect.height / 2
-    mouseX.value = ((x - centerX) / centerX) * 5 // max 5deg tilt
-    mouseY.value = ((y - centerY) / centerY) * 5
-  })
-}
-
-function onMouseLeave() {
-  if (tiltRaf) cancelAnimationFrame(tiltRaf)
-  mouseX.value = 0
-  mouseY.value = 0
-}
-
-const cardStyle = computed(() => ({
-  transform: `perspective(1200px) rotateX(${-mouseY.value}deg) rotateY(${mouseX.value}deg)`,
-  transition: mouseX.value === 0 && mouseY.value === 0 ? 'transform 0.5s var(--ease-spring)' : 'none'
-}))
-
 watch(slideDone, (done, prev) => {
   if (prev && !done) slideRef.value?.reset()
 })
@@ -122,7 +84,7 @@ async function handleSubmit(e) {
 </script>
 
 <template>
-  <div class="page" @mousemove="onMouseMove" @mouseleave="onMouseLeave">
+  <div class="page">
     <!-- Cool animated background -->
     <div class="page__ambient" aria-hidden="true">
       <div class="mesh-grid"></div>
@@ -134,10 +96,8 @@ async function handleSubmit(e) {
 
     <main class="stage">
       <section
-        ref="cardRef"
         class="card"
         :class="{ 'card--loading': busy, 'card--hidden': successVisible }"
-        :style="cardStyle"
       >
         <div class="card__glow"></div>
         <div class="card__content">
@@ -463,7 +423,6 @@ async function handleSubmit(e) {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  perspective: 1200px;
 }
 
 /* Ambient Animated Mesh & Blobs */
@@ -531,7 +490,6 @@ async function handleSubmit(e) {
   margin: auto;
   padding: 24px 20px 40px;
   flex-shrink: 0;
-  transform-style: preserve-3d;
 }
 
 /* Glassmorphic Card with Tilt */
@@ -543,7 +501,6 @@ async function handleSubmit(e) {
   -webkit-backdrop-filter: blur(40px) saturate(200%);
   box-shadow: var(--shadow-lg);
   border: 1px solid rgba(255, 255, 255, 0.8);
-  will-change: transform;
 }
 
 .card::before {
@@ -561,7 +518,7 @@ async function handleSubmit(e) {
 
 .card--hidden {
   opacity: 0;
-  transform: scale(0.95) translateY(20px) rotateX(10deg) !important;
+  transform: scale(0.95) translateY(20px);
 }
 
 .card__content {

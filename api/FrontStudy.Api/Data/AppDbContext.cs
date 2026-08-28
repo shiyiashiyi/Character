@@ -10,6 +10,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 {
     public DbSet<User> Users => Set<User>();
     public DbSet<EmailVerificationCode> EmailVerificationCodes => Set<EmailVerificationCode>();
+    public DbSet<SavedCard> SavedCards => Set<SavedCard>();
+    public DbSet<GenerationJob> GenerationJobs => Set<GenerationJob>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -37,6 +39,31 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(e => e.IsConsumed).HasDefaultValue(false);
             entity.Property(e => e.CreatedAtUtc).HasDefaultValueSql("SYSUTCDATETIME()");
             entity.HasIndex(e => new { e.Email, e.CreatedAtUtc });
+        });
+
+        modelBuilder.Entity<SavedCard>(entity =>
+        {
+            entity.ToTable("CharacterCards");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Slug).HasMaxLength(80).IsRequired();
+            entity.Property(e => e.CharacterName).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.WorkTitle).HasMaxLength(200);
+            entity.Property(e => e.CardJson).IsRequired();
+            entity.Property(e => e.SkillMarkdown).IsRequired();
+            entity.Property(e => e.EvidenceMarkdown).IsRequired();
+            entity.Property(e => e.CreatedAtUtc).HasDefaultValueSql("SYSUTCDATETIME()");
+            entity.HasIndex(e => e.Slug);
+        });
+
+        modelBuilder.Entity<GenerationJob>(entity =>
+        {
+            entity.ToTable("GenerationJobs");
+            entity.HasKey(e => e.JobId);
+            entity.Property(e => e.JobId).HasMaxLength(32).IsRequired();
+            entity.Property(e => e.Status).HasMaxLength(16).IsRequired();
+            entity.Property(e => e.CurrentStageKey).HasMaxLength(32);
+            entity.Property(e => e.Message);
+            entity.Property(e => e.ResultJson);
         });
     }
 }

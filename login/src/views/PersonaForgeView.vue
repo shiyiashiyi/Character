@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
-import { forgePersona } from '../api/personaApi'
+import { forgePersona, forgeEventsUrl, forgeStatusUrl } from '../api/personaApi'
 
 const router = useRouter()
 
@@ -17,38 +17,20 @@ const loading = ref(false)
 const error = ref('')
 const result = ref(null)
 const previewTab = ref('skill')
-const currentStageIndex = ref(0)
-let stageTimer = null
 
-// 后端当前是一次性返回结果，所以这里用前端阶段清单展示“正在走到哪一步”。
-// AI 模式会多一步模型精修，规则模式则直接进入 Skill 文件生成。
-const forgeStageMap = {
-  rule: [
-    { title: '读取上传文本', desc: '检查文件类型并准备提交内容' },
-    { title: '上传到生成服务', desc: '把角色信息和文本发送到后端' },
-    { title: '抽取台词与证据', desc: '定位角色相关对话、旁白和章节线索' },
-    { title: '生成 Skill 文件', desc: '整理规则、证据索引和预览内容' },
-  ],
-  ai: [
-    { title: '读取上传文本', desc: '检查文件类型并准备提交内容' },
-    { title: '上传到生成服务', desc: '把角色信息和文本发送到后端' },
-    { title: '抽取台词与证据', desc: '定位角色相关对话、旁白和章节线索' },
-    { title: 'AI 精修 Skill 文件', desc: '基于证据重写角色语气和约束' },
-    { title: '整理生成结果', desc: '汇总 Skill 与 source-evidence 预览' },
-  ],
-}
+// 真实进度（后端上报；SSE 优先，轮询兜底）
+const stageList = ref([]) // [{ key, title, description }]
+const currentStageIndex = ref(0)
+const progressPercent = ref(0)
+let sseSource = null
+let sseTimer = null
+let pollTimer = null
+let timeoutTimer = null
 
 const canSubmit = computed(
   () => characterName.value.trim() && file.value && !loading.value,
 )
-const forgeStages = computed(() => forgeStageMap[mode.value] ?? forgeStageMap.rule)
-const currentStageNumber = computed(() =>
-  Math.min(currentStageIndex.value + 1, forgeStages.value.length),
-)
-const activeStage = computed(() => forgeStages.value[currentStageNumber.value - 1] ?? forgeStages.value[0])
-const progressPercent = computed(() =>
-  Math.round((currentStageNumber.value / forgeStages.value.length) * 100),
-)
+const currentStage = computed(() => stageList.value[currentStageIndex.value])
 
 const hasCard = computed(() => !!result.value?.cardJson)
 const previewContent = computed(() => {
@@ -75,29 +57,104 @@ function normalizeResult(data) {
   }
 }
 
-function clearStageTimer() {
-  if (!stageTimer) return
-  window.clearInterval(stageTimer)
-  stageTimer = null
+function clearTimers() {
+  if (sseTimer) { clearTimeout(sseTimer); sseTimer = null }
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null }
+  if (timeoutTimer) { clearTimeout(timeoutTimer); timeoutTimer = null }
 }
 
-function startStageTicker() {
-  currentStageIndex.value = 0
-  clearStageTimer()
+function closeSse() {
+  if (sseSource) {
+    sseSource.close()
+    sseSource = null
+  }
+  clearTimers()
+}
 
-  // 请求期间无法知道后端的真实毫秒级进度，因此只推进到最后一步之前；
-  // 真正返回成功后再切到最后一步，避免 UI 提前宣告完成。
-  stageTimer = window.setInterval(() => {
-    const lastPendingIndex = Math.max(forgeStages.value.length - 2, 0)
-    if (currentStageIndex.value < lastPendingIndex) {
-      currentStageIndex.value += 1
+function handleProgress(data) {
+  if (data.error) {
+    closeSse()
+    loading.value = false
+    error.value = data.message || '任务已失效，请重新提交'
+    return
+  }
+
+  if (Array.isArray(data.stages) && data.stages.length) {
+    stageList.value = data.stages
+  }
+  const idx = stageList.value.findIndex((s) => s.key === data.currentStage?.key)
+  if (idx >= 0) currentStageIndex.value = idx
+  if (typeof data.percent === 'number') progressPercent.value = data.percent
+
+  if (data.done) {
+    closeSse()
+    loading.value = false
+    if (data.result) {
+      result.value = normalizeResult(data.result)
+      previewTab.value = 'skill'
+    } else {
+      error.value = data.message || '生成失败'
     }
-  }, mode.value === 'ai' ? 1400 : 900)
+  }
 }
 
-function finishStageTicker() {
-  clearStageTimer()
-  currentStageIndex.value = forgeStages.value.length - 1
+function startPolling(jobId) {
+  pollTimer = setInterval(async () => {
+    try {
+      const res = await fetch(forgeStatusUrl(jobId))
+      if (res.status === 404) {
+        // 任务不存在（后端重启/过期）：明确报错而不是无限轮询
+        closeSse()
+        loading.value = false
+        error.value = '生成任务不存在或已失效，请重新提交'
+        return
+      }
+      const data = await res.json()
+      handleProgress(data)
+    } catch {
+      // 单次轮询失败忽略，继续下一次
+    }
+  }, 1000)
+}
+
+function openSse(jobId) {
+  closeSse()
+  const source = new EventSource(forgeEventsUrl(jobId))
+  sseSource = source
+  let received = false
+
+  // 整体超时兜底：10 分钟未完成视为超时
+  timeoutTimer = setTimeout(() => {
+    if (loading.value) {
+      closeSse()
+      loading.value = false
+      error.value = '生成超时（超过 10 分钟），请重试'
+    }
+  }, 600_000)
+
+  // 3 秒内未收到 SSE 事件（部分环境 EventSource 被拦截）→ 切换轮询兜底
+  sseTimer = setTimeout(() => {
+    if (!received && loading.value) {
+      source.close()
+      sseSource = null
+      startPolling(jobId)
+    }
+  }, 3000)
+
+  source.onmessage = (e) => {
+    received = true
+    let data
+    try {
+      data = JSON.parse(e.data)
+    } catch {
+      return
+    }
+    handleProgress(data)
+  }
+
+  source.onerror = () => {
+    // EventSource 会自动重连；长时间无事件由 sseTimer 切换轮询兜底
+  }
 }
 
 function onPick(e) {
@@ -128,7 +185,10 @@ async function submit() {
   loading.value = true
   error.value = ''
   result.value = null
-  startStageTicker()
+  stageList.value = []
+  currentStageIndex.value = 0
+  progressPercent.value = 0
+  closeSse()
   try {
     const data = await forgePersona({
       file: file.value,
@@ -137,14 +197,11 @@ async function submit() {
       chapterRange: chapterRange.value.trim(),
       mode: mode.value,
     })
-    finishStageTicker()
-    result.value = normalizeResult(data)
-    previewTab.value = 'skill'
+    openSse(data.jobId)
   } catch (e) {
-    error.value = e.message || '生成失败'
-  } finally {
-    clearStageTimer()
+    closeSse()
     loading.value = false
+    error.value = e.message || '提交失败'
   }
 }
 
@@ -173,7 +230,7 @@ function downloadCard() {
   download(result.value.cardJson, 'character-card.json')
 }
 
-onBeforeUnmount(clearStageTimer)
+onBeforeUnmount(closeSse)
 </script>
 
 <template>
@@ -246,18 +303,18 @@ onBeforeUnmount(clearStageTimer)
         <div class="loading-panel__head">
           <span class="spinner" aria-hidden="true"></span>
           <div>
-            <p class="stage">{{ activeStage.title }}</p>
-            <p class="stage-detail">{{ activeStage.desc }}</p>
+            <p class="stage">{{ currentStage?.title || '准备中…' }}</p>
+            <p class="stage-detail">{{ currentStage?.description || '等待生成服务响应…' }}</p>
           </div>
-          <span class="stage-count">{{ currentStageNumber }}/{{ forgeStages.length }}</span>
+          <span class="stage-count">{{ stageList.length ? `${currentStageIndex + 1}/${stageList.length}` : '…' }}</span>
         </div>
         <div class="progress" aria-hidden="true">
           <span :style="{ width: `${progressPercent}%` }"></span>
         </div>
         <ol class="stage-list">
           <li
-            v-for="(item, index) in forgeStages"
-            :key="item.title"
+            v-for="(item, index) in stageList"
+            :key="item.key"
             :class="{
               'stage-list__item--done': index < currentStageIndex,
               'stage-list__item--active': index === currentStageIndex,

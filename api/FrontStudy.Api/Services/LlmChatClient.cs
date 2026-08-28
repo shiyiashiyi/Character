@@ -7,6 +7,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using FrontStudy.Api.Options;
 using Microsoft.Extensions.Options;
@@ -20,6 +21,17 @@ public class LlmChatClient(
 {
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(120);
     private const int MaxAttempts = 3;
+
+    /// <summary>容错反序列化：LLM 偶尔把数组字段输出成单个字符串（如 "bottomLines": "证据不足"）。</summary>
+    private static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();
+
+    private static JsonSerializerOptions CreateJsonOptions()
+    {
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        options.Converters.Add(new StringListConverter());
+        return options;
+    }
+
     private readonly AiProviderOptions _opts = options.Value;
 
     /// <summary>返回配置问题说明；为 null 表示已就绪。</summary>
@@ -72,9 +84,7 @@ public class LlmChatClient(
         var json = ExtractJsonObject(content);
         try
         {
-            return JsonSerializer.Deserialize<T>(
-                json,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            return JsonSerializer.Deserialize<T>(json, JsonOptions);
         }
         catch (Exception ex)
         {
@@ -153,4 +163,30 @@ public class LlmChatClient(
     }
 
     private static string Truncate(string s, int max) => s.Length <= max ? s : s[..max] + "…";
+}
+
+/// <summary>把「单字符串或数组」都解析为 List&lt;string&gt;，容忍 LLM 的格式漂移。</summary>
+internal sealed class StringListConverter : JsonConverter<List<string>>
+{
+    public override List<string> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.String)
+            return [reader.GetString() ?? ""];
+
+        if (reader.TokenType == JsonTokenType.StartArray)
+        {
+            var list = new List<string>();
+            while (reader.Read())
+            {
+                if (reader.TokenType == JsonTokenType.EndArray) break;
+                if (reader.TokenType == JsonTokenType.String) list.Add(reader.GetString() ?? "");
+            }
+            return list;
+        }
+
+        return [];
+    }
+
+    public override void Write(Utf8JsonWriter writer, List<string> value, JsonSerializerOptions options) =>
+        JsonSerializer.Serialize(writer, value, options);
 }

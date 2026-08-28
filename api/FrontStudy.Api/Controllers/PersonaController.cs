@@ -1,28 +1,32 @@
 /**
- * PersonaController.cs — 上传小说文本并生成角色人格 Skill。
+ * PersonaController.cs — 上传小说文本并异步生成角色人格 Skill。
  *
- * mode=rule：规则抽取（证据索引，无 LLM，作为回退 / 无 Key 场景）。
- * mode=ai  ：多阶段 LLM 流水线（主路径），失败或未配置时回退到规则模式。
+ * 流程：POST /forge 提交任务（立即返回 jobId）→
+ *       GET /forge/{jobId}        轮询进度/结果
+ *       GET /forge/{jobId}/events SSE 实时进度
+ * AI 未配置或失败时回退规则模式（在后台任务内处理）。
  */
+using System.Text;
+using System.Text.Json;
 using FrontStudy.Api.DTOs;
+using FrontStudy.Api.Models;
 using FrontStudy.Api.Services;
 using Microsoft.AspNetCore.Mvc;
-using System.Text;
 
 namespace FrontStudy.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 public class PersonaController(
-    PersonaForgeService forge,
-    PersonaPipelineService pipeline,
+    ForgeJobStore jobs,
+    ForgeJobRunner runner,
     ILogger<PersonaController> logger) : ControllerBase
 {
     private static readonly string[] AllowedExt = [".txt", ".md", ".text"];
 
     [HttpPost("forge")]
     [RequestSizeLimit(10 * 1024 * 1024)]
-    public async Task<ActionResult<PersonaForgeResponse>> Forge(
+    public async Task<ActionResult<PersonaForgeSubmitResponse>> Forge(
         [FromForm] string characterName,
         [FromForm] string? workTitle,
         [FromForm] string? chapterRange,
@@ -47,32 +51,84 @@ public class PersonaController(
             return BadRequest(new PersonaForgeResponse(false, "请上传文本文件", null, null, null, null, null, null, null));
         }
 
-        if (string.Equals(mode, "ai", StringComparison.OrdinalIgnoreCase))
-        {
-            return Ok(await ForgeWithAiAsync(text, characterName, workTitle, chapterRange, ct));
-        }
+        var job = runner.Start(text, characterName, workTitle, chapterRange, mode);
+        logger.LogInformation("Persona 任务已提交：{JobId} mode={Mode}", job.JobId, mode);
 
-        return Ok(forge.Forge(text, characterName, workTitle, chapterRange));
+        return Accepted(new PersonaForgeSubmitResponse(
+            job.JobId,
+            job.Status.ToString(),
+            $"/api/persona/forge/{job.JobId}",
+            $"/api/persona/forge/{job.JobId}/events"));
     }
 
-    private async Task<PersonaForgeResponse> ForgeWithAiAsync(
-        string text, string characterName, string? workTitle, string? chapterRange, CancellationToken ct)
+    [HttpGet("forge/{jobId}")]
+    public ActionResult<ForgeProgressEvent> GetJob(string jobId)
     {
-        var validation = pipeline.Validate();
-        if (validation is not null)
+        var job = jobs.Get(jobId);
+        if (job is null) return NotFound();
+        return Ok(ToEvent(job));
+    }
+
+    [HttpGet("forge/{jobId}/events")]
+    public async Task ForgeEvents(string jobId, CancellationToken ct)
+    {
+        Response.Headers.ContentType = "text/event-stream";
+        Response.Headers.CacheControl = "no-cache";
+        Response.Headers["X-Accel-Buffering"] = "no";
+        logger.LogInformation("SSE 订阅开始：{JobId}", jobId);
+        await Response.Body.FlushAsync(ct);
+
+        try
         {
-            logger.LogWarning("AI 流水线未就绪，回退规则模式：{Reason}", validation);
-            var fallback = forge.Forge(text, characterName, workTitle, chapterRange);
-            return fallback with { Message = $"{fallback.Message}（AI 未配置，已回退规则模式）" };
+            while (!ct.IsCancellationRequested)
+            {
+                var job = jobs.Get(jobId);
+                if (job is null)
+                {
+                    // 任务不存在（后端重启或已过期）：发送错误事件后结束，避免前端无限等待
+                    await WriteSseAsync(Response, new { error = "job_not_found", message = "生成任务不存在或已失效，请重新提交" }, ct);
+                    logger.LogInformation("SSE 任务不存在：{JobId}", jobId);
+                    break;
+                }
+
+                var evt = ToEvent(job);
+                await WriteSseAsync(Response, evt, ct);
+                if (evt.Done)
+                {
+                    logger.LogInformation("SSE 完成：{JobId} status={Status}", jobId, job.Status);
+                    break;
+                }
+
+                await Task.Delay(500, ct);
+            }
         }
+        catch (OperationCanceledException)
+        {
+            logger.LogInformation("SSE 客户端断开：{JobId}", jobId);
+        }
+    }
 
-        var result = await pipeline.ForgeAsync(text, characterName, workTitle, chapterRange, ct);
-        if (result.Success)
-            return result;
+    private static ForgeProgressEvent ToEvent(ForgeJob job) =>
+        new(
+            job.JobId,
+            job.Status.ToString(),
+            job.Percent,
+            job.CurrentStage,
+            ForgeJob.Stages,
+            job.Message,
+            job.IsDone,
+            job.Result);
 
-        logger.LogWarning("AI 流水线失败，回退规则模式：{Reason}", result.Message);
-        var rule = forge.Forge(text, characterName, workTitle, chapterRange);
-        return rule with { Message = $"{rule.Message}（AI 生成失败，已回退规则模式）" };
+    private static readonly JsonSerializerOptions SseJson = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
+
+    private static async Task WriteSseAsync(HttpResponse response, object payload, CancellationToken ct)
+    {
+        var json = JsonSerializer.Serialize(payload, SseJson);
+        await response.WriteAsync($"data: {json}\n\n", ct);
+        await response.Body.FlushAsync(ct);
     }
 
     private static async Task<string> ReadTextFileAsync(IFormFile file, CancellationToken ct)

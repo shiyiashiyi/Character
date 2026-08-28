@@ -35,6 +35,7 @@ public class PersonaPipelineService(
         string characterName,
         string? workTitle,
         string? chapterRange,
+        ForgeJob job,
         CancellationToken ct)
     {
         var name = characterName.Trim();
@@ -42,30 +43,35 @@ public class PersonaPipelineService(
         var range = string.IsNullOrWhiteSpace(chapterRange) ? "用户上传全文" : chapterRange.Trim();
 
         // Stage 0：预处理
+        SetStage(job, "preprocess", 5);
         var chunks = Preprocess(text);
         if (chunks.Count == 0)
             return Fail("文本为空或无法分块");
 
         // Stage 1：检索相关块
+        SetStage(job, "upload", 10);
         var relevant = Retrieve(chunks, name);
 
-        // Stage 2：证据抽取（map）
-        var evidence = await ExtractEvidenceAsync(relevant, name, work, ct);
+        // Stage 2：证据抽取（map，按块上报进度）
+        var evidence = await ExtractEvidenceAsync(relevant, name, work, job, ct);
         if (evidence is null || evidence.Count == 0)
             return Fail("证据抽取失败：LLM 未返回有效证据，可重试或换用规则模式");
 
         // Stage 3：人格综合（reduce）
+        SetStage(job, "synthesize", 80);
         var persona = await llm.ChatJsonAsync<PersonaSynthesis>(
             ExtractSystem, BuildSynthesisPrompt(name, work, evidence), ct);
         if (persona is null)
             return Fail("人格综合失败：LLM 未返回有效结果");
 
         // Stage 4：语气样本
+        SetStage(job, "examples", 90);
         var examplesResult = await llm.ChatJsonAsync<ExamplesResult>(
             ExtractSystem, BuildExamplesPrompt(name, persona, evidence), ct);
         var examples = examplesResult?.Examples?.Where(e => !string.IsNullOrWhiteSpace(e.Char)).ToList() ?? [];
 
         // Stage 5：组装
+        SetStage(job, "assemble", 98);
         var card = AssembleCard(name, work, range, persona, examples);
         var skillMd = RenderSkillMarkdown(card);
         var evidenceMd = RenderEvidenceMarkdown(name, work, range, evidence);
@@ -188,11 +194,13 @@ public class PersonaPipelineService(
     private sealed record LlmEvidence(string? Type, string? Text, string? Chapter, string? Speaker, double? Confidence);
 
     private async Task<List<EvidenceItem>?> ExtractEvidenceAsync(
-        List<TextChunk> chunks, string name, string work, CancellationToken ct)
+        List<TextChunk> chunks, string name, string work, ForgeJob job, CancellationToken ct)
     {
         var all = new List<EvidenceItem>();
-        foreach (var chunk in chunks)
+        for (var i = 0; i < chunks.Count; i++)
         {
+            var chunk = chunks[i];
+            SetStage(job, "evidence", 20 + (int)((i + 1) * 50.0 / chunks.Count), $"块 {i + 1}/{chunks.Count}");
             var result = await llm.ChatJsonAsync<EvidenceChunkResult>(
                 ExtractSystem, BuildEvidencePrompt(name, work, chunk), ct);
             if (result?.Evidence is null) continue;
@@ -230,12 +238,13 @@ public class PersonaPipelineService(
         目标角色：{{name}}
         章节：{{chunk.Chapter}}
 
-        请从下面的小说片段中，抽取所有与角色「{{name}}」相关的【原话台词】和【旁白提及】，作为角色扮演证据。
+        请从下面的小说片段中，抽取与角色「{{name}}」相关的【原话台词】和【旁白提及】，作为角色扮演证据。
         要求：
-        1. 原话必须逐字摘自原文，不得改写、不得概括；
+        1. 原话必须逐字摘自原文，不得改写、不得概括；每条 text 不超过 100 字；
         2. 只抽取「{{name}}」本人说的话，以及直接描写「{{name}}」的旁白；不要把其它角色的台词算进来；
-        3. 每条给出 type（quote=台词，mention=旁白提及）、chapter、speaker、confidence（0~1 的数字）；
-        4. 返回 JSON 对象，格式：
+        3. **最多返回 12 条**：优先台词、其次旁白，宁可少而精，不要凑数；
+        4. 每条给出 type（quote=台词，mention=旁白提及）、chapter、speaker、confidence（0~1 的数字）；
+        5. 返回 JSON 对象，格式：
         { "evidence": [ { "type": "quote", "text": "……", "chapter": "……", "speaker": "……", "confidence": 0.9 } ] }
 
         小说片段：
@@ -516,4 +525,12 @@ public class PersonaPipelineService(
 
     private static PersonaForgeResponse Fail(string msg) =>
         new(false, msg, null, null, null, null, null, null, null);
+
+    /// <summary>上报当前阶段与进度到任务（SSE/轮询据此渲染）。</summary>
+    private static void SetStage(ForgeJob job, string key, int percent, string? message = null)
+    {
+        job.CurrentStage = ForgeJob.Stages.FirstOrDefault(s => s.Key == key) ?? new ForgeStage(key, key, message);
+        job.Percent = Math.Clamp(percent, 0, 99);
+        if (message is not null) job.Message = message;
+    }
 }
